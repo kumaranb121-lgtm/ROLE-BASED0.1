@@ -19,14 +19,16 @@ export default function DashboardHOD() {
   const [eventForm, setEventForm] = useState({ title: '', date: '', time: '', location: '', audience: 'ALL', poster: '' });
   const [events, setEvents] = useState<any[]>([]);
   const [absentLogs, setAbsentLogs] = useState<any[]>([]);
+  const [studentAbsentees, setStudentAbsentees] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [subRes, leaveRes, eventRes] = await Promise.all([
+        const [subRes, leaveRes, eventRes, attendanceRes] = await Promise.all([
           api.get('/substitutions'),
           api.get('/leaves').catch(() => ({ data: [] })),
-          api.get('/events').catch(() => ({ data: [] }))
+          api.get('/events').catch(() => ({ data: [] })),
+          api.get('/attendance').catch(() => ({ data: [] }))
         ]);
         
         const subs = subRes.data || [];
@@ -39,6 +41,11 @@ export default function DashboardHOD() {
         // Populate absent logs (substitution history)
         // Grouping by fromStaff to show who is absent and who they requested
         setAbsentLogs(subs);
+
+        // Populate student absentees
+        const attendanceData = attendanceRes.data || [];
+        const absenteesData = attendanceData.filter((a: any) => a.absentCount > 0);
+        setStudentAbsentees(absenteesData);
 
         setData({
           staffCount: 19, // Static for now if /users endpoint doesn't allow HOD to fetch all
@@ -241,58 +248,6 @@ export default function DashboardHOD() {
             </div>
           </div>
 
-          {/* Absentees & Substitution Logs */}
-          <div className="bg-white rounded-2xl border border-[#dbe8d8] shadow-sm overflow-hidden mt-8">
-            <div className="p-6 border-b border-[#dbe8d8] flex justify-between items-center">
-              <h2 className="text-lg font-bold flex items-center gap-2 border-l-4 border-[#01949a] pl-3 text-[#017a80]">
-                Substitution & Absentees Log
-              </h2>
-            </div>
-            <div className="overflow-x-auto max-h-[300px] overflow-y-auto">
-              <table className="w-full text-sm text-left relative">
-                <thead className="bg-[#f4f8f3] text-[#01949a] font-bold text-xs uppercase sticky top-0 shadow-sm">
-                  <tr>
-                    <th className="px-6 py-4">Date</th>
-                    <th className="px-6 py-4">Absent Staff</th>
-                    <th className="px-6 py-4">Requested Substitute</th>
-                    <th className="px-6 py-4">Class & Period</th>
-                    <th className="px-6 py-4">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#dbe8d8]/50">
-                  {absentLogs.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="px-6 py-10 text-center text-[#01949a]/60 font-medium">No logs available</td>
-                    </tr>
-                  ) : absentLogs.map((log, i) => (
-                    <tr key={log._id || i} className="hover:bg-[#f4f8f3]/50 transition-colors">
-                      <td className="px-6 py-4 font-medium text-[#017a80]">
-                        {new Date(log.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </td>
-                      <td className="px-6 py-4 font-bold text-[#d93838]">
-                        {log.fromStaff?.name || 'Unknown'}
-                      </td>
-                      <td className="px-6 py-4 font-bold text-[#017a80]">
-                        {log.toStaff?.name || 'Pending/AI'}
-                      </td>
-                      <td className="px-6 py-4 text-[#01949a]/80 font-medium">
-                        Period {log.timetableSlot?.period} - {log.timetableSlot?.classId?.year} Yr {log.timetableSlot?.classId?.department}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider border ${
-                          log.status === 'Pending' ? 'bg-amber-100 text-amber-700 border-amber-200' :
-                          log.status === 'Accepted' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
-                          'bg-red-100 text-red-700 border-red-200'
-                        }`}>
-                          {log.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
         </div>
 
         {/* Right Sidebar Area */}

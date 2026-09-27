@@ -50,6 +50,14 @@ export default function Header({ toggleSidebar }: { toggleSidebar: () => void })
         // Play the provided notification mp3
         try {
           const audio = new Audio('/notification.mp3');
+          
+          if (data.type === 'substitution_request') {
+            audio.onended = () => {
+              const secondAudio = new Audio('/notification.mp3');
+              secondAudio.play().catch(e => console.error(e));
+            };
+          }
+          
           // Important: In modern browsers, audio can only play if user has interacted with the DOM.
           // Since they are navigating the dashboard, it should generally be allowed.
           audio.play().catch(e => console.error('Audio play blocked by browser. User interaction needed:', e));

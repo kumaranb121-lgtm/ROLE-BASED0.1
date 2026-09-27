@@ -2,8 +2,8 @@ import mongoose from 'mongoose';
 
 const attendanceSchema = new mongoose.Schema(
   {
-    classId: { type: mongoose.Schema.Types.ObjectId, ref: 'Class', required: true },
-    timetableSlot: { type: mongoose.Schema.Types.ObjectId, ref: 'Timetable', required: true },
+    classId: { type: String, required: true },
+    timetableSlot: { type: String, required: true },
     date: { type: Date, required: true },
     markedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     presentCount: { type: Number, required: true },

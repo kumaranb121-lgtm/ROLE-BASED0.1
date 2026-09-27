@@ -90,11 +90,28 @@ export const acceptSubstitution = async (request: FastifyRequest, reply: Fastify
   }
 
   const toStaffUser = await User.findById(user.id);
+  const currentTime = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true });
+
   await sendPushNotification(substitution.fromStaff.toString(), {
     title: 'Substitution Accepted',
     body: `${toStaffUser?.name} has accepted your substitution request`,
     url: '/substitutions'
   });
+
+  // Notify HOD
+  const hods = await User.find({ role: 'HOD' });
+  for (const hod of hods) {
+    const hodNotification = await Notification.create({
+      user: hod._id,
+      type: 'substitution_accepted',
+      content: `${toStaffUser?.name} accepted a substitution request at ${currentTime}`,
+      relatedId: substitution._id
+    });
+    
+    if (globalIo) {
+      globalIo.to(`role:hod`).emit('new_notification', hodNotification);
+    }
+  }
 
   return reply.send(substitution);
 };
